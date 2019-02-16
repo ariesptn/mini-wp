@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="google-signin-client_id"
+        content="523370932372-p1lk1cvft173rngd2t3rifh9pk9tkslr.apps.googleusercontent.com">
+    <title>Mini-wp</title>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/lib/vue-wysiwyg/vueWysiwyg.css">
+    <script src="/lib/vue-wysiwyg/vueWysiwyg.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="app">
+        <div class="container">
+            <div v-if="showError" class="alert alert-warning" role="alert" v-html="errorMessage"></div>
+        </div>
+
+        <div class="container" v-if="loggedIn">
+
+            <nav class="navbar navbar-expand-lg navbar-light bg-dark">
+                <a class="navbar-brand text-light" href="#">Mini-wp</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse"
+                    data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item active">
+                            <a v-on:click="showEmptyForm" class="nav-link text-light" href="#">New article <span
+                                    class="sr-only">(current)</span></a>
+                        </li>
+                        <li class="nav-item">
+                            <a v-on:click="getArticles" class="nav-link text-light" href="#">Refresh</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-light" href="#" id="navbarDropdown" role="button"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Menu
+                            </a>
+                            <div class="dropdown-menu bg-dark" aria-labelledby="navbarDropdown">
+                                <a v-on:click="switchPanel('articles')" class="dropdown-item text-light"
+                                    href="#">Articles</a>
+                                <a v-on:click="switchPanel('tags')" class="dropdown-item text-light" href="#">Tags</a>
+                                <div class="dropdown-divider"></div>
+                                <a v-on:click="logout" class="dropdown-item text-light" href="#">Logout</a>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link disabled text-light" href="#" tabindex="-1"
+                                aria-disabled="true">{{userName}} ({{userEmail}})</a>
+                        </li>
+                    </ul>
+                    <form v-on:submit.prevent="searchArticles" class="form-inline my-2 my-lg-0">
+                        <input v-model="searchBox" class="form-control mr-sm-2" type="search" placeholder="Search"
+                            aria-label="Search">
+                        <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+                    </form>
+                </div>
+            </nav>
+
+            <div class="row">
+                <div class="col-md-3">
+                    <page-menu v-bind:articles="articles" v-on:show-empty-form="showEmptyForm()"
+                        v-on:switch-panel="switchPanel($event)" v-on:get-articles="getArticles($event)"></page-menu>
+                </div>
+
+                <div class="col-md-9">
+                    <div class="alert alert-primary" role="alert" v-if="searchBox.trim()!==''">
+                        Showing search result for : {{searchBox}}
+                    </div>
+
+                    <tag-list v-if="showTags" v-bind:article-tags="articleTags" v-bind:articles="articles"
+                        v-on:tag-select="tagSelect($event)">
+                    </tag-list>
+
+                    <article-list v-if="showArticles" v-bind:articles="articles"
+                        v-on:show-edit-form="showEditForm($event)" v-on:article-delete="articleDelete($event)"
+                        v-on:tag-select="tagSelect($event)">
+                    </article-list>
+
+                    <article-form v-if="showArticleForm" v-on:switch-panel="switchPanel($event)"
+                        v-on:display-error="displayError($event)" v-on:get-articles="getArticles()"
+                        v-bind:article-form-title-copy="articleFormTitle"
+                        v-bind:article-form-tags-copy="articleFormTags"
+                        v-bind:article-form-content-copy="articleFormContent"
+                        v-bind:article-edit-id-copy="articleEditId">
+                    </article-form>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col bg-dark">
+                    <page-footer></page-footer>
+                </div>
+            </div>
+        </div>
+
+        <div class="container" id="loginRegister" v-if="loggedIn===false">
+            <loginregister-form></loginregister-form>
+        </div>
+
+        <div class="container">
+            <div id="googleSigninButton2" class="g-signin2" data-onsuccess="onSignIn"></div>
+        </div>
+    </div>
+
+    <script src="/lib/main.js"></script>
+    <script src="components/loginregister-form.js"></script>
+    <script src="components/page-menu.js"></script>
+    <script src="components/article-list.js"></script>
+    <script src="components/tag-list.js"></script>
+    <script src="components/article-form.js"></script>
+    <script src="components/page-footer.js"></script>
+    <script src="main.js"></script>
+</body>
+
+</html>
