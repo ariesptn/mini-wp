@@ -1,8 +1,6 @@
 # mini-wp
 A simple blog project
 
-A demo of this project is available at: http://miniwp.arieseptian.com
-
 Nodejs, npm, and MongoDB is required to run the server.  
 Before running server, copy or rename the .env-template file to .env, and edit it accordingly.  
 Google Cloud Platform JSON key file is needed to enable image uploading to Google Cloud Storage.  
